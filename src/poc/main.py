@@ -7,7 +7,15 @@ from typing import Annotated
 from fastapi import FastAPI, HTTPException, Query, status
 
 from poc.client import PostgrestClient
-from poc.models import TaskComplete, TaskCreate, TaskRead
+from poc.models import (
+    ProjectCreate,
+    ProjectRead,
+    ProjectSummary,
+    ProjectWithTasks,
+    TaskComplete,
+    TaskCreate,
+    TaskRead,
+)
 from poc.state import AppRequest, AppState
 
 SearchQuery = Annotated[str, Query(min_length=1, description="Full-text search query.")]
@@ -48,14 +56,16 @@ async def search_tasks(
 )
 async def create_task(payload: TaskCreate, request: AppRequest) -> TaskRead:
     client = request.state["postgrest"]
-    return await client.create_task(payload.title, payload.description, payload.tags)
+    project_id = str(payload.project_id) if payload.project_id is not None else None
+    return await client.create_task(
+        payload.title, payload.description, payload.tags, project_id
+    )
 
 
 @app.get("/tasks/{task_id}", response_model=TaskRead)
 async def get_task(task_id: str, request: AppRequest) -> TaskRead:
     client = request.state["postgrest"]
     task = await client.get_task(task_id)
-
     if task is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Task not found."
@@ -67,29 +77,61 @@ async def get_task(task_id: str, request: AppRequest) -> TaskRead:
 async def complete_task(task_id: str, request: AppRequest) -> TaskComplete:
     client = request.state["postgrest"]
     task = await client.get_task(task_id)
-
     if task is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Task not found."
         )
-
     if task.status == "completed":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Task is already completed.",
         )
-
     completed = await client.complete_task(task_id)
-
     if completed is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to complete task.",
         )
-
     return TaskComplete(
         id=completed.id,
         title=completed.title,
         status=completed.status,
         updated_at=completed.updated_at,
+    )
+
+
+@app.get("/projects", response_model=list[ProjectWithTasks])
+async def list_projects(request: AppRequest) -> list[ProjectWithTasks]:
+    client = request.state["postgrest"]
+    return await client.list_projects_with_tasks()
+
+
+@app.post(
+    "/projects",
+    response_model=ProjectRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_project(payload: ProjectCreate, request: AppRequest) -> ProjectRead:
+    client = request.state["postgrest"]
+    return await client.create_project(payload.name)
+
+
+@app.get("/projects/{project_id}/summary", response_model=ProjectSummary)
+async def project_summary(project_id: str, request: AppRequest) -> ProjectSummary:
+    client = request.state["postgrest"]
+    project = await client.get_project(project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Project not found."
+        )
+    tasks = await client.list_tasks_by_project(project_id)
+    total = len(tasks)
+    pending = sum(1 for t in tasks if t.status == "pending")
+    completed = total - pending
+    return ProjectSummary(
+        id=project.id,
+        name=project.name,
+        total=total,
+        pending=pending,
+        completed=completed,
     )

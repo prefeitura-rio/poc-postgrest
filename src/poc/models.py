@@ -14,6 +14,9 @@ class TaskCreate(BaseModel):
         default=None, description="Optional task description."
     )
     tags: list[str] = Field(default_factory=list, description="Optional task tags.")
+    project_id: UUID | None = Field(
+        default=None, description="Optional project to assign the task to."
+    )
 
 
 class TaskRead(BaseModel):
@@ -24,6 +27,7 @@ class TaskRead(BaseModel):
     description: str | None
     status: str
     tags: list[str]
+    project_id: UUID | None
     created_at: datetime
     updated_at: datetime
 
@@ -41,3 +45,45 @@ class TaskList(RootModel[list[TaskRead]]):
     """A list of tasks as returned by PostgREST."""
 
     root: list[TaskRead]
+
+
+class ProjectCreate(BaseModel):
+    """Payload to create a project."""
+
+    name: str = Field(min_length=1, description="Project name, must not be empty.")
+
+
+class ProjectRead(BaseModel):
+    """A project as stored in the database."""
+
+    id: UUID
+    name: str
+    created_at: datetime
+
+
+class ProjectWithTasks(ProjectRead):
+    """A project with its tasks nested via PostgREST embedded resources."""
+
+    tasks: list[TaskRead] = Field(default_factory=list)
+
+
+class ProjectSummary(BaseModel):
+    """Aggregated task counts for a project, computed by FastAPI."""
+
+    id: UUID
+    name: str
+    total: int
+    pending: int
+    completed: int
+
+
+class ProjectList(RootModel[list[ProjectRead]]):
+    """A list of projects as returned by PostgREST."""
+
+    root: list[ProjectRead]
+
+
+class ProjectWithTasksList(RootModel[list[ProjectWithTasks]]):
+    """A list of projects with embedded tasks."""
+
+    root: list[ProjectWithTasks]

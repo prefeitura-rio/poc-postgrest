@@ -7,8 +7,9 @@
   };
 
   packages = with pkgs; [
-    nushell
     goose
+    hurl
+    nushell
   ];
 
   languages = {

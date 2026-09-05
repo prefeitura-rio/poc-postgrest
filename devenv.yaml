@@ -1,3 +1,4 @@
+allow_unfree: true
 inputs:
   git-hooks:
     url: github:cachix/git-hooks.nix
