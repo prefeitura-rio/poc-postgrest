@@ -30,14 +30,17 @@ The migrator service exits `0` once migrations are applied; `postgrest` and
 
 ## Endpoints
 
-| Method | Path                   | Description                                  |
-| ------ | ---------------------- | -------------------------------------------- |
-| GET    | `/tasks`               | List all tasks.                              |
-| POST   | `/tasks`               | Create a task (`{"title": "..."}`).          |
-| GET    | `/tasks/{id}`          | Read a single task.                          |
-| POST   | `/tasks/{id}/complete` | Complete a task; `409` if already completed. |
+| Method | Path                        | Description                                              |
+| ------ | --------------------------- | -------------------------------------------------------- |
+| GET    | `/tasks`                    | List all tasks; optional `?tag=` jsonb filter.           |
+| GET    | `/tasks/search?q=`          | Full-text search over title and description.             |
+| POST   | `/tasks`                    | Create a task (`title`, optional `description`, `tags`). |
+| GET    | `/tasks/{id}`               | Read a single task.                                      |
+| POST   | `/tasks/{id}/complete`      | Complete a task; `409` if already completed.             |
 
-PostgREST is also reachable directly on port `3000` (`GET /tasks`, etc.).
+PostgREST is also reachable directly on port `3000`. Full-text search uses the
+`search_vector=fts.<term>` operator and jsonb tag filtering uses
+`tags=cs.["<tag>"]` (containment).
 
 ## Validate
 

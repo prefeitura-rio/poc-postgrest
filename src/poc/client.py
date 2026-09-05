@@ -27,8 +27,22 @@ class PostgrestClient:
     async def aclose(self) -> None:
         await self.client.aclose()
 
-    async def list_tasks(self) -> list[TaskRead]:
-        response = await self.client.get("/tasks", params={"order": "created_at.asc"})
+    async def list_tasks(self, tag: str | None = None) -> list[TaskRead]:
+        params: dict[str, str] = {"order": "created_at.asc"}
+
+        if tag is not None:
+            params["tags"] = f'cs.["{tag}"]'
+
+        response = await self.client.get("/tasks", params=params)
+        response = response.raise_for_status()
+        return TaskList.model_validate_json(response.content).root
+
+    async def search_tasks(self, query: str) -> list[TaskRead]:
+        response = await self.client.get(
+            "/tasks",
+            params={"search_vector": f"fts.{query}", "order": "created_at.asc"},
+        )
+
         response = response.raise_for_status()
         return TaskList.model_validate_json(response.content).root
 
@@ -38,12 +52,15 @@ class PostgrestClient:
         rows = TaskList.model_validate_json(response.content).root
         return rows[0] if rows else None
 
-    async def create_task(self, title: str) -> TaskRead:
+    async def create_task(
+        self, title: str, description: str | None, tags: list[str]
+    ) -> TaskRead:
         response = await self.client.post(
             "/tasks",
-            json={"title": title},
+            json={"title": title, "description": description, "tags": tags},
             headers={"Prefer": "return=representation"},
         )
+
         response = response.raise_for_status()
         rows = TaskList.model_validate_json(response.content).root
         return rows[0]

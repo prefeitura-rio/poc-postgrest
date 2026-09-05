@@ -10,6 +10,10 @@ class TaskCreate(BaseModel):
     """Payload to create a task."""
 
     title: str = Field(min_length=1, description="Task title, must not be empty.")
+    description: str | None = Field(
+        default=None, description="Optional task description."
+    )
+    tags: list[str] = Field(default_factory=list, description="Optional task tags.")
 
 
 class TaskRead(BaseModel):
@@ -17,7 +21,9 @@ class TaskRead(BaseModel):
 
     id: UUID
     title: str
+    description: str | None
     status: str
+    tags: list[str]
     created_at: datetime
     updated_at: datetime
 
