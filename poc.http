@@ -1,0 +1,39 @@
+### Variables
+# @host_api = http://localhost:8000
+# @host_pgrst = http://localhost:3000
+
+### Create a task via FastAPI
+# @name createTask
+POST http://localhost:8000/tasks
+Content-Type: application/json
+
+{
+  "title": "Buy milk"
+}
+
+### List tasks via FastAPI
+GET http://localhost:8000/tasks
+
+### Read the created task via FastAPI
+GET http://localhost:8000/tasks/{{createTask.response.body.id}}
+
+### Complete the task via FastAPI (expect 200)
+# @name completeTask
+POST http://localhost:8000/tasks/{{createTask.response.body.id}}/complete
+
+### Complete the task again via FastAPI (expect 409 Conflict)
+POST http://localhost:8000/tasks/{{createTask.response.body.id}}/complete
+
+### Reject empty title via FastAPI (expect 422 Unprocessable Entity)
+POST http://localhost:8000/tasks
+Content-Type: application/json
+
+{
+  "title": ""
+}
+
+### List tasks directly via PostgREST (confirms the write propagated)
+GET http://localhost:3000/tasks
+
+### Read the completed task directly via PostgREST
+GET http://localhost:3000/tasks?id=eq.{{createTask.response.body.id}}

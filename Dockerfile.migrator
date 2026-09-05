@@ -1,0 +1,10 @@
+FROM alpine:3.21
+
+ARG GOOSE_VERSION=v3.28.0
+ARG GOOSE_URL=https://github.com/pressly/goose/releases/download/${GOOSE_VERSION}/goose_linux_x86_64
+
+RUN apk add --no-cache ca-certificates wget \
+    && wget -qO /usr/local/bin/goose "${GOOSE_URL}" \
+    && chmod +x /usr/local/bin/goose
+
+WORKDIR /migrations
