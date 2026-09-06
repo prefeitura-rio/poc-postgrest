@@ -1,0 +1,18 @@
+services:
+  migrator:
+    build:
+      context: ..
+      dockerfile: Dockerfile.migrator
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ../migrations:/migrations:ro
+    command:
+      - goose
+      - -dir
+      - /migrations
+      - postgres
+      - postgres://app:app@db:5432/app?sslmode=disable
+      - up
+    restart: "no"

@@ -25,18 +25,21 @@ The migrator service exits `0` once migrations are applied; `postgrest` and `api
 
 ## Endpoints
 
-| Method | Path                     | Description                                                            |
-| ------ | ------------------------ | ---------------------------------------------------------------------- |
-| GET    | `/tasks`                 | List all tasks; optional `?tag=` jsonb filter.                         |
-| GET    | `/tasks/search?q=`       | Full-text search over title and description.                           |
-| POST   | `/tasks`                 | Create a task (`title`, optional `description`, `tags`, `project_id`). |
-| GET    | `/tasks/{id}`            | Read a single task.                                                    |
-| POST   | `/tasks/{id}/complete`   | Complete a task; `409` if already completed.                           |
-| GET    | `/projects`              | List projects with tasks embedded (PostgREST join).                    |
-| POST   | `/projects`              | Create a project (`name`).                                             |
-| GET    | `/projects/{id}/summary` | Task counts by status (custom aggregation).                            |
+| Method | Path                          | Description                                                            |
+| ------ | ----------------------------- | ---------------------------------------------------------------------- |
+| GET    | `/tasks`                      | List all tasks; optional `?tag=` jsonb filter.                         |
+| GET    | `/tasks/search?q=`            | Full-text search over title and description.                           |
+| POST   | `/tasks`                      | Create a task (`title`, optional `description`, `tags`, `project_id`). |
+| GET    | `/tasks/{id}`                 | Read a single task.                                                    |
+| POST   | `/tasks/{id}/complete`        | Complete a task; `409` if already completed.                           |
+| GET    | `/projects`                   | List projects with tasks embedded (PostgREST join).                    |
+| POST   | `/projects`                   | Create a project (`name`).                                             |
+| GET    | `/projects/{id}/summary`      | Task counts by status (custom aggregation).                            |
+| POST   | `/projects/{id}/complete-all` | Atomically complete all pending tasks via a Postgres RPC.              |
 
-PostgREST is also reachable directly on port `3000`. Full-text search uses the `search_vector=fts.<term>` operator, jsonb tag filtering uses `tags=cs.["<tag>"]` (containment), and project-task joins use `select=*,tasks(*)` (embedded resources).
+PostgREST is also reachable directly on port `3000`. Full-text search uses the `search_vector=fts.<term>` operator, jsonb tag filtering uses `tags=cs.["<tag>"]` (containment), project-task joins use `select=*,tasks(*)` (embedded resources), and `POST /rpc/complete_all_tasks` calls the atomic Postgres function.
+
+The schema also demonstrates a native `task_status` ENUM, a `BEFORE UPDATE` trigger that auto-maintains `updated_at`, and the `complete_all_tasks` `SECURITY DEFINER` RPC.
 
 ## Validate
 

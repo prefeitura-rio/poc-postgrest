@@ -1,0 +1,12 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    depends_on:
+      postgrest:
+        condition: service_started
+    environment:
+      POC_POSTGREST_URL: http://postgrest:3000
+    ports:
+      - 8000:8000

@@ -7,7 +7,7 @@ CREATE TABLE app.tasks (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     title text NOT NULL,
     status text NOT NULL DEFAULT 'pending'
-        CHECK (status IN ('pending', 'completed')),
+    CHECK (status IN ('pending', 'completed')),
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
 );

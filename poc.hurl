@@ -68,6 +68,52 @@ jsonpath "$.total" == 2
 jsonpath "$.pending" == 1
 jsonpath "$.completed" == 1
 
+### RPC demo: create a second project with two pending tasks
+POST http://localhost:8000/projects
+Content-Type: application/json
+{"name":"Work"}
+
+HTTP 201
+[Captures]
+projectId2: jsonpath "$.id"
+
+###
+POST http://localhost:8000/tasks
+Content-Type: application/json
+{"title":"Write docs","tags":["work"],"project_id":"{{projectId2}}"}
+
+HTTP 201
+
+###
+POST http://localhost:8000/tasks
+Content-Type: application/json
+{"title":"Review PR","tags":["work"],"project_id":"{{projectId2}}"}
+
+HTTP 201
+
+### Complete all pending tasks in the second project via the RPC (atomic, expect count 2)
+POST http://localhost:8000/projects/{{projectId2}}/complete-all
+
+HTTP 200
+[Asserts]
+jsonpath "$.completed_count" == 2
+
+### Confirm the second project summary now shows all completed
+GET http://localhost:8000/projects/{{projectId2}}/summary
+
+HTTP 200
+[Asserts]
+jsonpath "$.total" == 2
+jsonpath "$.pending" == 0
+jsonpath "$.completed" == 2
+
+### Calling complete-all again on the now-empty pending set returns 0
+POST http://localhost:8000/projects/{{projectId2}}/complete-all
+
+HTTP 200
+[Asserts]
+jsonpath "$.completed_count" == 0
+
 ### List tasks via FastAPI
 GET http://localhost:8000/tasks
 
@@ -164,12 +210,66 @@ HTTP 200
 jsonpath "$" count == 1
 jsonpath "$[0].status" == "completed"
 
+### FK constraint: inserting a task with a nonexistent project_id is rejected by PostgREST
+POST http://localhost:3000/tasks
+Content-Type: application/json
+{"title":"orphan","project_id":"00000000-0000-0000-0000-000000000000"}
+
+HTTP 409
+[Asserts]
+jsonpath "$.code" == "23503"
+
+### ON DELETE SET NULL: create a project and a task, delete the project, task keeps existing with null project_id
+POST http://localhost:8000/projects
+Content-Type: application/json
+{"name":"SetNull"}
+
+HTTP 201
+[Captures]
+projectId3: jsonpath "$.id"
+
+###
+POST http://localhost:8000/tasks
+Content-Type: application/json
+{"title":"child","project_id":"{{projectId3}}"}
+
+HTTP 201
+[Captures]
+taskId3: jsonpath "$.id"
+
+### Delete the project directly via PostgREST
+DELETE http://localhost:3000/projects?id=eq.{{projectId3}}
+
+HTTP 204
+
+### The child task still exists, with project_id nulled by ON DELETE SET NULL
+GET http://localhost:3000/tasks?id=eq.{{taskId3}}&select=project_id
+
+HTTP 200
+[Asserts]
+jsonpath "$[0].project_id" == null
+
 ### Cleanup: delete the tasks created by this run (keeps the test idempotent)
 DELETE http://localhost:3000/tasks?project_id=eq.{{projectId}}
 
 HTTP 204
 
+### Cleanup: delete the second project's tasks and the project
+DELETE http://localhost:3000/tasks?project_id=eq.{{projectId2}}
+
+HTTP 204
+
+### Cleanup: delete the orphaned task from the ON DELETE SET NULL test
+DELETE http://localhost:3000/tasks?id=eq.{{taskId3}}
+
+HTTP 204
+
 ### Cleanup: delete the project created by this run
 DELETE http://localhost:3000/projects?id=eq.{{projectId}}
+
+HTTP 204
+
+###
+DELETE http://localhost:3000/projects?id=eq.{{projectId2}}
 
 HTTP 204

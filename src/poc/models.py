@@ -77,6 +77,12 @@ class ProjectSummary(BaseModel):
     completed: int
 
 
+class CompleteAllResult(BaseModel):
+    """Result of atomically completing all pending tasks in a project."""
+
+    completed_count: int
+
+
 class ProjectList(RootModel[list[ProjectRead]]):
     """A list of projects as returned by PostgREST."""
 
@@ -87,3 +93,9 @@ class ProjectWithTasksList(RootModel[list[ProjectWithTasks]]):
     """A list of projects with embedded tasks."""
 
     root: list[ProjectWithTasks]
+
+
+class CompleteAllCount(RootModel[int]):
+    """The integer count returned by the complete_all_tasks RPC."""
+
+    root: int

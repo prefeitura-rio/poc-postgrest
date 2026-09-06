@@ -1,5 +1,4 @@
 include:
   - compose/db.yaml
   - compose/migrator.yaml
-  - compose/postgrest.yaml
-  - compose/api.yaml
+  - compose/pgls.yaml

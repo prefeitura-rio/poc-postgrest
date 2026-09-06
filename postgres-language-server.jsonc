@@ -1,0 +1,42 @@
+{
+  "$schema": "https://pg-language-server.com/0.25.2/schema.json",
+  "extends": [],
+  "vcs": {
+    "enabled": false,
+    "clientKind": "git",
+    "useIgnoreFile": false
+  },
+  "files": {
+    "ignore": []
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true
+    }
+  },
+  "splinter": {
+    "enabled": true
+  },
+  "format": {
+    "enabled": false
+  },
+  "pglinter": {
+    "enabled": false
+  },
+  "typecheck": {
+    "enabled": false
+  },
+  "plpgsqlCheck": {
+    "enabled": false
+  },
+  "db": {
+    "host": "127.0.0.1",
+    "port": 5432,
+    "username": "app",
+    "password": "app",
+    "database": "app",
+    "connTimeoutSecs": 10,
+    "disableConnection": true
+  }
+}

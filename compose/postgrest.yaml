@@ -1,0 +1,14 @@
+services:
+  postgrest:
+    image: docker.io/postgrest/postgrest:v12.2.3
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+    environment:
+      PGRST_DB_URI: postgres://app:app@db:5432/app
+      PGRST_DB_SCHEMA: app
+      PGRST_DB_ANON_ROLE: web_anon
+      PGRST_LISTEN: 0.0.0.0:3000
+      PGRST_LOG_LEVEL: info
+    ports:
+      - 3000:3000

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://pg-language-server.com/0.25.7/schema.json",
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "safety": {
+        "banDropSchema": "off",
+        "banDropTable": "off",
+        "banDropColumn": "off",
+        "addingFieldWithDefault": "off",
+        "addSerialColumn": "off",
+        "multipleAlterTable": "off",
+        "runningStatementWhileHoldingAccessExclusive": "off",
+        "requireSeparateConstraintValidation": "off"
+      }
+    }
+  },
+  "splinter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "performance": {
+        "unusedIndex": "off"
+      }
+    }
+  }
+}

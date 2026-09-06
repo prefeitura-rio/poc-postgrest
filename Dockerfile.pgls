@@ -1,0 +1,10 @@
+FROM alpine:3.21
+
+ARG PGLS_VERSION=0.25.7
+ARG PGLS_URL=https://github.com/supabase-community/postgres-language-server/releases/download/${PGLS_VERSION}/postgres-language-server_x86_64-unknown-linux-musl
+
+RUN apk add --no-cache ca-certificates wget \
+    && wget -qO /usr/local/bin/postgres-language-server "${PGLS_URL}" \
+    && chmod +x /usr/local/bin/postgres-language-server
+
+WORKDIR /migrations

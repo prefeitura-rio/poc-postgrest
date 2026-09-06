@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 FROM ghcr.io/astral-sh/uv:python3.14-alpine
 
 WORKDIR /app

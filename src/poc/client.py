@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from httpx2 import AsyncClient
 
 from poc.models import (
+    CompleteAllCount,
     ProjectList,
     ProjectRead,
     ProjectWithTasks,
@@ -81,13 +82,21 @@ class PostgrestClient:
         response = await self.client.patch(
             "/tasks",
             params={"id": f"eq.{task_id}"},
-            json={"status": "completed", "updated_at": "now()"},
+            json={"status": "completed"},
             headers={"Prefer": "return=representation"},
         )
 
         response = response.raise_for_status()
         rows = TaskList.model_validate_json(response.content).root
         return rows[0] if rows else None
+
+    async def complete_all_tasks(self, project_id: str) -> int:
+        response = await self.client.post(
+            "/rpc/complete_all_tasks",
+            json={"p_project_id": project_id},
+        )
+        response = response.raise_for_status()
+        return CompleteAllCount.model_validate_json(response.content).root
 
     async def list_projects(self) -> list[ProjectRead]:
         response = await self.client.get(

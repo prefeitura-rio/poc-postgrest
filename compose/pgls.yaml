@@ -1,0 +1,19 @@
+services:
+  pgls:
+    build:
+      context: ..
+      dockerfile: Dockerfile.pgls
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://app:app@db:5432/app
+    volumes:
+      - ../migrations:/migrations:ro
+      - ../pgls.jsonc:/pgls.jsonc:ro
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        postgres-language-server check --config-path=/pgls.jsonc --connection-string=postgres://app:app@db:5432/app --migrations-dir=/migrations /migrations
+        postgres-language-server dblint --config-path=/pgls.jsonc --connection-string=postgres://app:app@db:5432/app
+    restart: "no"

@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException, Query, status
 
 from poc.client import PostgrestClient
 from poc.models import (
+    CompleteAllResult,
     ProjectCreate,
     ProjectRead,
     ProjectSummary,
@@ -33,14 +34,14 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[AppState]:
 app = FastAPI(title="PoC Tasks API", lifespan=lifespan)
 
 
-@app.get("/tasks", response_model=list[TaskRead])
+@app.get("/tasks")
 async def list_tasks(request: AppRequest) -> list[TaskRead]:
     client = request.state["postgrest"]
     tag = request.query_params.get("tag")
     return await client.list_tasks(tag=tag)
 
 
-@app.get("/tasks/search", response_model=list[TaskRead])
+@app.get("/tasks/search")
 async def search_tasks(
     request: AppRequest,
     q: SearchQuery,
@@ -49,11 +50,7 @@ async def search_tasks(
     return await client.search_tasks(q)
 
 
-@app.post(
-    "/tasks",
-    response_model=TaskRead,
-    status_code=status.HTTP_201_CREATED,
-)
+@app.post("/tasks", status_code=status.HTTP_201_CREATED)
 async def create_task(payload: TaskCreate, request: AppRequest) -> TaskRead:
     client = request.state["postgrest"]
     project_id = str(payload.project_id) if payload.project_id is not None else None
@@ -62,7 +59,7 @@ async def create_task(payload: TaskCreate, request: AppRequest) -> TaskRead:
     )
 
 
-@app.get("/tasks/{task_id}", response_model=TaskRead)
+@app.get("/tasks/{task_id}")
 async def get_task(task_id: str, request: AppRequest) -> TaskRead:
     client = request.state["postgrest"]
     task = await client.get_task(task_id)
@@ -73,7 +70,7 @@ async def get_task(task_id: str, request: AppRequest) -> TaskRead:
     return task
 
 
-@app.post("/tasks/{task_id}/complete", response_model=TaskComplete)
+@app.post("/tasks/{task_id}/complete")
 async def complete_task(task_id: str, request: AppRequest) -> TaskComplete:
     client = request.state["postgrest"]
     task = await client.get_task(task_id)
@@ -100,23 +97,19 @@ async def complete_task(task_id: str, request: AppRequest) -> TaskComplete:
     )
 
 
-@app.get("/projects", response_model=list[ProjectWithTasks])
+@app.get("/projects")
 async def list_projects(request: AppRequest) -> list[ProjectWithTasks]:
     client = request.state["postgrest"]
     return await client.list_projects_with_tasks()
 
 
-@app.post(
-    "/projects",
-    response_model=ProjectRead,
-    status_code=status.HTTP_201_CREATED,
-)
+@app.post("/projects", status_code=status.HTTP_201_CREATED)
 async def create_project(payload: ProjectCreate, request: AppRequest) -> ProjectRead:
     client = request.state["postgrest"]
     return await client.create_project(payload.name)
 
 
-@app.get("/projects/{project_id}/summary", response_model=ProjectSummary)
+@app.get("/projects/{project_id}/summary")
 async def project_summary(project_id: str, request: AppRequest) -> ProjectSummary:
     client = request.state["postgrest"]
     project = await client.get_project(project_id)
@@ -135,3 +128,15 @@ async def project_summary(project_id: str, request: AppRequest) -> ProjectSummar
         pending=pending,
         completed=completed,
     )
+
+
+@app.post("/projects/{project_id}/complete-all")
+async def complete_all_tasks(project_id: str, request: AppRequest) -> CompleteAllResult:
+    client = request.state["postgrest"]
+    project = await client.get_project(project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Project not found."
+        )
+    count = await client.complete_all_tasks(project_id)
+    return CompleteAllResult(completed_count=count)
